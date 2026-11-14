@@ -1,0 +1,44 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: mat.$azure-palette,
+      typography: (
+        plain-family: (
+          Roboto,
+          'Helvetica Neue',
+          'Segoe UI',
+          Arial,
+          sans-serif,
+        ),
+        brand-family: (
+          Roboto,
+          'Helvetica Neue',
+          'Segoe UI',
+          Arial,
+          sans-serif,
+        ),
+      ),
+      density: 0,
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
+
+mat-toolbar {
+  --mat-toolbar-container-background-color: var(--mat-sys-primary);
+  --mat-toolbar-container-text-color: var(--mat-sys-on-primary);
+}

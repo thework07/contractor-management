@@ -1,0 +1,61 @@
+<div class="mx-auto max-w-2xl p-6">
+  <mat-card appearance="outlined">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-header class="pt-4!">
+      <mat-card-title>
+        <span class="flex items-center gap-2">
+          <lucide-angular [img]="icons.Server" [size]="20" />
+          System status
+        </span>
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content class="pt-4!">
+      @if (report(); as r) {
+        <div
+          class="flex items-center gap-2 font-medium"
+          [class]="r.status === 'ok' ? 'text-green-700' : 'text-amber-700'"
+        >
+          <lucide-angular
+            [img]="r.status === 'ok' ? icons.CircleCheck : icons.CircleAlert"
+            [size]="20"
+          />
+          API {{ r.status === 'ok' ? 'is healthy' : 'is degraded' }}
+        </div>
+
+        <dl class="mt-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
+          <dt class="text-gray-500">Service</dt>
+          <dd>{{ r.service }} v{{ r.version }}</dd>
+          <dt class="text-gray-500">Environment</dt>
+          <dd>{{ r.environment }}</dd>
+          <dt class="text-gray-500">Uptime</dt>
+          <dd>{{ r.uptimeSeconds }}s</dd>
+          <dt class="text-gray-500">Database</dt>
+          <dd class="flex items-center gap-1">
+            <lucide-angular [img]="icons.Database" [size]="14" />
+            {{ r.database.status }} ({{ r.database.state }})
+          </dd>
+        </dl>
+      } @else if (error(); as message) {
+        <div class="flex items-center gap-2 font-medium text-red-700">
+          <lucide-angular [img]="icons.CircleAlert" [size]="20" />
+          {{ message }}
+        </div>
+      }
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button type="button" (click)="refresh()" [disabled]="loading()">
+        <lucide-angular
+          [img]="icons.RefreshCw"
+          [size]="16"
+          class="mr-1 inline-block align-middle"
+        />
+        Refresh
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

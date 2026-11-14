@@ -1,0 +1,15 @@
+/** Envelope returned by the API on success. */
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+}
+
+export interface ApiErrorBody {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>[];
+    requestId?: string;
+  };
+}
