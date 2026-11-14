@@ -1,0 +1,199 @@
+<div
+  class="app-shell"
+  [class.sidebar-collapsed]="collapsed()"
+  [class.mobile-nav-open]="mobileNavOpen()"
+>
+  @if (mobileNavOpen()) {
+    <button
+      class="mobile-backdrop"
+      type="button"
+      aria-label="Close navigation"
+      (click)="closeMobileNav()"
+    ></button>
+  }
+
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-brand">
+      <a class="brand-lockup" routerLink="/" (click)="closeMobileNav()" aria-label="ContractorHQ home">
+        <span class="brand-mark">C</span>
+        @if (!collapsed()) {
+          <span class="brand-name">contractor<span>hq</span></span>
+        }
+      </a>
+      <button
+        class="icon-button sidebar-collapse"
+        type="button"
+        [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        (click)="toggleSidebar()"
+      >
+        <lucide-angular [img]="icons.PanelLeftClose" [size]="17" />
+      </button>
+      <button
+        class="icon-button sidebar-mobile-close"
+        type="button"
+        aria-label="Close navigation"
+        (click)="closeMobileNav()"
+      >
+        <lucide-angular [img]="icons.X" [size]="18" />
+      </button>
+    </div>
+
+    <button
+      class="workspace-switch"
+      type="button"
+      aria-label="Select organization"
+      [matMenuTriggerFor]="workspaceMenu"
+    >
+      <span class="workspace-avatar">N</span>
+      @if (!collapsed()) {
+        <span class="workspace-copy">
+          <span class="workspace-name">Northstar Builders</span>
+          <span class="workspace-plan">Workspace</span>
+        </span>
+        <lucide-angular class="workspace-chevron" [img]="icons.ChevronDown" [size]="15" />
+      }
+    </button>
+
+    <mat-menu #workspaceMenu="matMenu" class="workspace-menu">
+      <div class="menu-section-label">WORKSPACE</div>
+      <button mat-menu-item>
+        <span class="menu-leading-icon workspace-avatar menu-workspace-avatar">N</span>
+        <span>Northstar Builders</span>
+        <lucide-angular class="menu-check" [img]="icons.Check" [size]="15" />
+      </button>
+      <button mat-menu-item disabled>
+        <lucide-angular class="menu-leading-icon" [img]="icons.Building2" [size]="17" />
+        <span>Create organization</span>
+      </button>
+    </mat-menu>
+
+    <nav class="sidebar-nav">
+      @for (group of navGroups(); track group.label) {
+        <section class="nav-group">
+          @if (group.label && !collapsed()) {
+            <h2 class="nav-group-title">{{ group.label }}</h2>
+          }
+          @for (item of group.items; track item.id) {
+            @if (item.enabled && item.route) {
+              <a
+                class="nav-item"
+                [routerLink]="item.route"
+                routerLinkActive="nav-item-active"
+                [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+                [attr.aria-label]="item.label"
+                [attr.title]="collapsed() ? item.label : null"
+                (click)="closeMobileNav()"
+              >
+                <lucide-angular [img]="item.icon" [size]="18" [strokeWidth]="1.8" />
+                @if (!collapsed()) {
+                  <span>{{ item.label }}</span>
+                }
+              </a>
+            } @else {
+              <div
+                class="nav-item nav-item-disabled"
+                role="link"
+                [attr.aria-label]="item.label + ' — Coming soon'"
+                [attr.title]="collapsed() ? item.label + ' — Coming soon' : null"
+                aria-disabled="true"
+              >
+                <lucide-angular [img]="item.icon" [size]="18" [strokeWidth]="1.8" />
+                @if (!collapsed()) {
+                  <span class="nav-item-label">{{ item.label }}</span>
+                  @if (item.comingSoon) {
+                    <span class="nav-coming-soon">Coming soon</span>
+                  }
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+    </nav>
+
+    <div class="sidebar-bottom">
+      @if (!collapsed()) {
+        <div class="sidebar-footer">
+          <span class="sidebar-footer-dot"></span>
+          All systems operational
+        </div>
+      }
+    </div>
+  </aside>
+
+  <div class="main-column">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-button mobile-menu-button" type="button" aria-label="Open navigation" (click)="openMobileNav()">
+          <lucide-angular [img]="icons.Menu" [size]="20" />
+        </button>
+        <div class="topbar-context">
+          <span class="context-dot"></span>
+          <span>Northstar Builders</span>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button
+          class="icon-button topbar-action"
+          type="button"
+          aria-label="Notifications"
+          [matMenuTriggerFor]="notificationsMenu"
+        >
+          <lucide-angular [img]="icons.Bell" [size]="19" [strokeWidth]="1.8" />
+        </button>
+        <mat-menu #notificationsMenu="matMenu" class="notifications-menu">
+          <div class="dropdown-heading">
+            <div>
+              <strong>Notifications</strong>
+              <span>Updates from your workspace</span>
+            </div>
+          </div>
+          <div class="notification-empty">
+            <span class="notification-empty-icon">
+              <lucide-angular [img]="icons.Bell" [size]="19" />
+            </span>
+            <strong>You're all caught up</strong>
+            <span>New updates will show up here.</span>
+          </div>
+        </mat-menu>
+
+        <span class="topbar-divider"></span>
+
+        <button class="profile-trigger" type="button" [matMenuTriggerFor]="profileMenu">
+          <span class="profile-avatar">AM</span>
+          <span class="profile-trigger-copy">
+            <strong>Alex Morgan</strong>
+            <span>Administrator</span>
+          </span>
+          <lucide-angular class="profile-chevron" [img]="icons.ChevronDown" [size]="15" />
+        </button>
+        <mat-menu #profileMenu="matMenu" class="profile-menu">
+          <div class="profile-menu-header">
+            <span class="profile-avatar profile-avatar-large">AM</span>
+            <span>
+              <strong>Alex Morgan</strong>
+              <small>alex@northstar.co</small>
+            </span>
+          </div>
+          <button mat-menu-item>
+            <lucide-angular class="menu-leading-icon" [img]="icons.UserRound" [size]="17" />
+            <span>My profile</span>
+          </button>
+          <button mat-menu-item>
+            <lucide-angular class="menu-leading-icon" [img]="icons.Settings" [size]="17" />
+            <span>Account settings</span>
+          </button>
+          <button mat-menu-item (click)="confirmSignOut()">
+            <lucide-angular class="menu-leading-icon menu-danger-icon" [img]="icons.LogOut" [size]="17" />
+            <span>Sign out</span>
+          </button>
+        </mat-menu>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

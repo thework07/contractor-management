@@ -4,4 +4,21 @@ export interface Environment {
   apiUrl: string;
   /** Minimum level printed by LoggerService. */
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent';
+  dashboardMockData?: DashboardMockData;
+}
+
+export interface DashboardMockData {
+  stats: {
+    id: 'employees' | 'active' | 'uploads' | 'pending' | 'approved' | 'salary';
+    label: string;
+    value: string;
+    note: string;
+  }[];
+  activity: {
+    [key: string]: string;
+    action: string;
+    details: string;
+    time: string;
+    status: string;
+  }[];
 }

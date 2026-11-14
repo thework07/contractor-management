@@ -1,0 +1,43 @@
+<app-breadcrumbs [items]="breadcrumbs" />
+
+<app-page-header
+  title="Dashboard"
+  description="A clear view of your workforce, attendance and payroll activity."
+>
+  @if (data) {
+    <span class="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-blue-700">
+      DEVELOPMENT PREVIEW
+    </span>
+  }
+</app-page-header>
+
+@if (data; as dashboard) {
+  <section class="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6" aria-label="Organization summary">
+    @for (stat of dashboard.stats; track stat.id) {
+      <app-summary-card
+        [icon]="iconFor(stat.id)"
+        [label]="stat.label"
+        [value]="stat.value"
+        [note]="stat.note"
+        [tone]="toneFor(stat.id)"
+      />
+    }
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(22,35,58,0.02)]">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div>
+        <h2 class="m-0 text-sm font-semibold tracking-[-0.02em] text-slate-800">Recent activity</h2>
+        <p class="mb-0 mt-1 text-[11px] text-slate-400">The latest updates across your organization</p>
+      </div>
+      <span class="text-[10px] font-medium text-slate-400">Last 7 days</span>
+    </div>
+    <app-data-table [columns]="columns" [rows]="dashboard.activity" />
+  </section>
+} @else {
+  <app-empty-state
+    [icon]="icons.CalendarCheck"
+    title="Your dashboard is ready"
+    description="Organization metrics and recent activity will appear here once connected."
+  />
+}
