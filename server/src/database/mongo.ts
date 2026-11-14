@@ -37,6 +37,8 @@ const attachListeners = (): void => {
 export const getMongoState = (): MongoState =>
   READY_STATES[mongoose.connection.readyState] ?? 'unknown';
 
+export const getCentralConnection = () => mongoose.connection;
+
 /** Connects with bounded retries. Throws the last error when every attempt fails. */
 export const connectMongo = async (): Promise<void> => {
   if (mongoose.connection.readyState === 1) return;
@@ -50,6 +52,7 @@ export const connectMongo = async (): Promise<void> => {
         uri: redactMongoUri(env.MONGODB_URI),
       });
       await mongoose.connect(env.MONGODB_URI, {
+        dbName: env.MONGODB_CENTRAL_DB_NAME,
         maxPoolSize: env.MONGODB_MAX_POOL_SIZE,
         serverSelectionTimeoutMS: env.MONGODB_SERVER_SELECTION_TIMEOUT_MS,
         autoIndex: !isProduction,

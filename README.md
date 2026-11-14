@@ -1,7 +1,8 @@
 # Contractor Management
 
-Multi-tenant Contractor Management SaaS. This repository currently contains **Step 1: project foundation** only
-(no authentication, employees, attendance, salary or Google integrations yet).
+Multi-tenant Contractor Management SaaS. The responsive Angular SaaS shell and **Step 3: multi-tenant MongoDB
+foundation** are implemented. Production authentication and employee, attendance, salary and Google integrations are
+not implemented yet.
 
 | Part   | Stack                                                                    |
 | ------ | ------------------------------------------------------------------------ |
@@ -47,23 +48,27 @@ Run inside `server/` or `client/` (or via the root `npm run <script>` where avai
 | `typecheck`               |   ✔    |   ✔    | TypeScript check without emitting          |
 | `lint` / `lint:fix`       |   ✔    |   ✔    | ESLint                                     |
 | `format` / `format:check` |   ✔    |   ✔    | Prettier                                   |
+| `test`                    |   ✔    |        | Isolated multi-tenant integration tests    |
 | `db:check`                |   ✔    |        | Connects to MongoDB, pings, disconnects    |
 
 ## Environment variables (`server/.env`)
 
 | Variable                              | Required | Default                 | Description                                          |
 | ------------------------------------- | :------: | ----------------------- | ---------------------------------------------------- |
-| `MONGODB_URI`                         |   yes    | -                       | `mongodb://` or `mongodb+srv://` connection string   |
-| `NODE_ENV`                            |    no    | `development`           | `development` / `test` / `production`                |
-| `PORT`                                |    no    | `3000`                  | API port                                             |
-| `CORS_ORIGINS`                        |    no    | `http://localhost:4200` | Comma-separated allowed origins                      |
-| `MONGODB_MAX_POOL_SIZE`               |    no    | `10`                    | Connection pool size                                 |
-| `MONGODB_SERVER_SELECTION_TIMEOUT_MS` |    no    | `5000`                  | Fail-fast timeout when MongoDB is unreachable        |
-| `MONGODB_CONNECT_RETRIES`             |    no    | `3`                     | Extra connection attempts at startup                 |
-| `MONGODB_RETRY_DELAY_MS`              |    no    | `2000`                  | Base delay between attempts (multiplied per attempt) |
-| `LOG_LEVEL`                           |    no    | `debug` dev / `info`    | `error` `warn` `info` `http` `debug`                 |
-| `LOG_TO_FILE`                         |    no    | `false`                 | Also write JSON logs to `LOG_DIR` (14-day rotation)  |
-| `LOG_DIR`                             |    no    | `logs`                  | Log directory (relative to `server/`)                |
+| `MONGODB_URI`                         |   yes    | -                       | MongoDB server URI; server selects central DB         |
+| `MONGODB_CENTRAL_DB_NAME`             |    no    | `saas_platform`          | Platform database for tenants, users and memberships  |
+| `NODE_ENV`                            |    no    | `development`           | `development` / `test` / `production`                 |
+| `PORT`                                |    no    | `3000`                  | API port                                              |
+| `CORS_ORIGINS`                        |    no    | `http://localhost:4200` | Comma-separated allowed origins                       |
+| `MONGODB_MAX_POOL_SIZE`               |    no    | `10`                    | Shared MongoDB client pool size                       |
+| `MONGODB_SERVER_SELECTION_TIMEOUT_MS` |    no    | `5000`                  | Fail-fast timeout when MongoDB is unreachable         |
+| `MONGODB_CONNECT_RETRIES`             |    no    | `3`                     | Extra connection attempts at startup                  |
+| `MONGODB_RETRY_DELAY_MS`              |    no    | `2000`                  | Base delay between attempts (multiplied per attempt)  |
+| `TENANT_CONNECTION_CACHE_MAX`         |    no    | `100`                   | Maximum cached tenant database handles                |
+| `DEV_AUTH_ENABLED`                    |    no    | `false`                 | Opt-in test identity adapter; rejected in production  |
+| `LOG_LEVEL`                           |    no    | `debug` dev / `info`    | `error` `warn` `info` `http` `debug`                  |
+| `LOG_TO_FILE`                         |    no    | `false`                 | Also write JSON logs to `LOG_DIR` (14-day rotation)   |
+| `LOG_DIR`                             |    no    | `logs`                  | Log directory (relative to `server/`)                 |
 
 The server validates these at startup and exits with a readable list of problems if any are invalid.
 Client settings live in `client/src/environments/` (`apiUrl`, `logLevel`).
@@ -80,14 +85,16 @@ server/src
     logger/      Winston logger (pretty in dev, JSON in prod)
     context/     AsyncLocalStorage request id
     http/        response helpers
-  modules/       feature modules (controller / service / routes / schema) - health for now
+  modules/
+    health/      health-check API
+    tenancy/     central models, tenant provisioning, connection manager and dev test APIs
   routes/        root /api router
   app.ts         Express app factory   |   server.ts   bootstrap + graceful shutdown
 
 client/src/app
   core/          singletons: API base URL, HTTP error interceptor, LoggerService
-  shared/        reusable UI (empty for now)
-  features/      lazy-loaded feature areas - system-status for now
+  shared/        reusable SaaS layout and UI components
+  features/      dashboard, employee, attendance and system-status UI areas
 ```
 
 Add a feature on the server by creating `modules/<name>/` and registering its router in `routes/index.ts`.
@@ -125,8 +132,38 @@ npm --prefix server run db:check                           # MongoDB connectivit
 
 Stop MongoDB and call `/api/health` again: it returns **503** with `"status": "degraded"`.
 
+### Development-only tenant API
+
+The test endpoints are mounted only outside production and remain disabled unless `DEV_AUTH_ENABLED=true` is set in
+`server/.env`. Restart the server after changing the setting. Use only a local or isolated test database: the
+`x-dev-user-email` header creates a development user if necessary and is **not real authentication**.
+
+```powershell
+$base = "http://localhost:3000/api/dev/tenants"
+$headers = @{ "x-dev-user-email" = "owner@example.test" }
+$body = @{ organizationName = "Example Org" } | ConvertTo-Json
+$created = Invoke-RestMethod -Method Post -Uri $base -Headers $headers `
+  -ContentType "application/json" -Body $body
+# Newly provisioned organization returns 201; a repeated registration returns 200.
+$tenantId = $created.data.tenantId
+
+Invoke-RestMethod -Uri "$base/memberships" -Headers $headers
+$headers["x-tenant-id"] = $tenantId
+Invoke-RestMethod -Uri "$base/current" -Headers $headers
+
+$record = @{ value = "isolated test value" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$base/current/records" -Headers $headers `
+  -ContentType "application/json" -Body $record
+Invoke-RestMethod -Uri "$base/current/records" -Headers $headers
+```
+
+These APIs expose tenant IDs and membership information, but never accept or return MongoDB database names.
+Membership and active-tenant checks are repeated on each tenant-scoped request. See
+[docs/MULTI_TENANT_ARCHITECTURE.md](docs/MULTI_TENANT_ARCHITECTURE.md) for routes, security, and operational details.
+
 ## Notes
 
 - `lucide-angular@1.0` declares Angular peer support up to v21; `client/package.json` has an `overrides` entry so it
   installs cleanly on Angular 22 (verified: builds and renders).
-- Multi-tenancy, authentication and authorization are intentionally not implemented yet.
+- Only the development test adapter exists; production authentication and user provisioning are pending. Business
+  tenant models (employees, sites, attendance, salaries) are not part of this step.

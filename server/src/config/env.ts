@@ -16,14 +16,25 @@ const envSchema = z.object({
   MONGODB_URI: z
     .string({ error: 'MONGODB_URI is required' })
     .regex(/^mongodb(\+srv)?:\/\//, 'must start with mongodb:// or mongodb+srv://'),
+  MONGODB_CENTRAL_DB_NAME: z.literal('saas_platform').default('saas_platform'),
   MONGODB_MAX_POOL_SIZE: z.coerce.number().int().positive().default(10),
   MONGODB_SERVER_SELECTION_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
   MONGODB_CONNECT_RETRIES: z.coerce.number().int().min(0).default(3),
   MONGODB_RETRY_DELAY_MS: z.coerce.number().int().min(0).default(2000),
+  TENANT_CONNECTION_CACHE_MAX: z.coerce.number().int().min(1).max(1000).default(100),
+  DEV_AUTH_ENABLED: booleanString,
 
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).optional(),
   LOG_TO_FILE: booleanString,
   LOG_DIR: z.string().default('logs'),
+}).superRefine((config, context) => {
+  if (config.NODE_ENV === 'production' && config.DEV_AUTH_ENABLED) {
+    context.addIssue({
+      code: 'custom',
+      path: ['DEV_AUTH_ENABLED'],
+      message: 'must be false in production',
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

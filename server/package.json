@@ -12,6 +12,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "tsx --test src/modules/tenancy/tenancy.integration.test.ts",
     "db:check": "tsx scripts/check-db.ts"
   },
   "dependencies": {

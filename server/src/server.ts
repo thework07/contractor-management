@@ -3,6 +3,8 @@ import { createApp } from './app';
 import { createLogger } from './common/logger/logger';
 import { env } from './config/env';
 import { connectMongo, disconnectMongo } from './database';
+import { initializeCentralModels } from './modules/tenancy/models/central.models';
+import { tenantConnectionManager } from './modules/tenancy/services/tenant-connection-manager';
 
 const log = createLogger('server');
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -26,6 +28,7 @@ const shutdown = async (reason: string, exitCode = 0): Promise<void> => {
       await new Promise<void>((resolve, reject) =>
         server?.close((e) => (e ? reject(e) : resolve())),
       );
+    await tenantConnectionManager.closeAll();
     await disconnectMongo();
     process.exit(exitCode);
   } catch (error) {
@@ -36,6 +39,7 @@ const shutdown = async (reason: string, exitCode = 0): Promise<void> => {
 
 const bootstrap = async (): Promise<void> => {
   await connectMongo();
+  await initializeCentralModels();
 
   const app = createApp();
   server = app.listen(env.PORT, () => {
